@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equipment Details - AgriRent</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <span class="logo-icon">🚜</span>
+        <span>AgriRent</span>
+      </a>
+      <ul class="nav-menu"></ul>
+    </div>
+  </nav>
+
+  <div class="container mt-2 mb-3">
+    <a href="/equipment" style="color: var(--primary); text-decoration: none; display: inline-block; margin-bottom: 1rem;">
+      ← Back to Equipment
+    </a>
+    
+    <div id="equipmentDetail">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    const equipmentId = window.location.pathname.split('/').pop();
+
+    async function loadEquipmentDetail() {
+      try {
+        const result = await api.getEquipmentById(equipmentId);
+        
+        if (result.success) {
+          displayEquipmentDetail(result.data);
+        } else {
+          document.getElementById('equipmentDetail').innerHTML = `
+            <div class="alert alert-error">
+              <span>⚠</span>
+              <span>Equipment not found</span>
+            </div>
+          `;
+        }
+      } catch (error) {
+        document.getElementById('equipmentDetail').innerHTML = `
+          <div class="alert alert-error">
+            <span>⚠</span>
+            <span>Error loading equipment details</span>
+          </div>
+        `;
+      }
+    }
+
+    function displayEquipmentDetail(equipment) {
+      const equipmentIcons = {
+        'Land Preparation': '🚜',
+        'Planting Equipment': '🌱',
+        'Irrigation': '💧',
+        'Crop Protection': '🛡️',
+        'Harvesting': '🌾',
+        'Post-Harvest': '📦',
+        'Transportation': '🚛',
+        'Specialized': '🤖'
+      };
+
+      const container = document.getElementById('equipmentDetail');
+      container.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+          <div class="card">
+            <div style="font-size: 10rem; text-align: center; background: linear-gradient(135deg, var(--wheat-gold) 0%, var(--harvest-orange) 100%); padding: 3rem; border-radius: var(--radius-md);">
+              ${equipmentIcons[equipment.category] || '🚜'}
+            </div>
+            
+            <div style="margin-top: 2rem;">
+              <h2>${equipment.name}</h2>
+              <span class="equipment-category">${equipment.category}</span>
+              <p style="margin-top: 1rem; color: var(--soil-dark);">${equipment.description}</p>
+            </div>
+
+            <div style="margin-top: 2rem;">
+              <h4 style="margin-bottom: 1rem;">Specifications</h4>
+              <table style="width: 100%; border-collapse: collapse;">
+                ${equipment.specifications.brand ? `
+                  <tr style="border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                    <td style="padding: 0.75rem 0; font-weight: 600;">Brand</td>
+                    <td style="padding: 0.75rem 0;">${equipment.specifications.brand}</td>
+                  </tr>
+                ` : ''}
+                ${equipment.specifications.model ? `
+                  <tr style="border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                    <td style="padding: 0.75rem 0; font-weight: 600;">Model</td>
+                    <td style="padding: 0.75rem 0;">${equipment.specifications.model}</td>
+                  </tr>
+                ` : ''}
+                ${equipment.specifications.year ? `
+                  <tr style="border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                    <td style="padding: 0.75rem 0; font-weight: 600;">Year</td>
+                    <td style="padding: 0.75rem 0;">${equipment.specifications.year}</td>
+                  </tr>
+                ` : ''}
+                ${equipment.specifications.horsepower ? `
+                  <tr style="border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                    <td style="padding: 0.75rem 0; font-weight: 600;">Horsepower</td>
+                    <td style="padding: 0.75rem 0;">${equipment.specifications.horsepower}</td>
+                  </tr>
+                ` : ''}
+                ${equipment.specifications.capacity ? `
+                  <tr style="border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                    <td style="padding: 0.75rem 0; font-weight: 600;">Capacity</td>
+                    <td style="padding: 0.75rem 0;">${equipment.specifications.capacity}</td>
+                  </tr>
+                ` : ''}
+                <tr style="border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                  <td style="padding: 0.75rem 0; font-weight: 600;">Condition</td>
+                  <td style="padding: 0.75rem 0;">${equipment.specifications.condition}</td>
+                </tr>
+              </table>
+            </div>
+
+            ${equipment.features && equipment.features.length > 0 ? `
+              <div style="margin-top: 2rem;">
+                <h4 style="margin-bottom: 1rem;">Features</h4>
+                <ul style="list-style-position: inside; color: var(--soil-dark);">
+                  ${equipment.features.map(f => `<li style="margin-bottom: 0.5rem;">${f}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            <div style="margin-top: 2rem;">
+              <h4 style="margin-bottom: 1rem;">Location</h4>
+              <p>📍 ${[equipment.location.village, equipment.location.district, equipment.location.state].filter(Boolean).join(', ')}</p>
+              ${equipment.location.pincode ? `<p>Pincode: ${equipment.location.pincode}</p>` : ''}
+            </div>
+
+            <div style="margin-top: 2rem;">
+              <h4 style="margin-bottom: 1rem;">Owner Information</h4>
+              <p><strong>Name:</strong> ${equipment.owner.name}</p>
+              <p><strong>Phone:</strong> ${equipment.owner.phone}</p>
+              <p><strong>Email:</strong> ${equipment.owner.email}</p>
+            </div>
+          </div>
+
+          <div>
+            <div class="card">
+              <h3 style="margin-bottom: 1.5rem;">Pricing & Booking</h3>
+              
+              <div style="background: linear-gradient(135deg, var(--primary) 0%, var(--leaf-green) 100%); color: white; padding: 2rem; border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+                <div style="font-size: 2.5rem; font-weight: 700; margin-bottom: 0.5rem;">
+                  ${ui.formatCurrency(equipment.pricing.daily)}
+                </div>
+                <div style="opacity: 0.9;">Per Day</div>
+              </div>
+
+              ${equipment.pricing.hourly ? `
+                <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                  <span>Hourly Rate</span>
+                  <strong>${ui.formatCurrency(equipment.pricing.hourly)}</strong>
+                </div>
+              ` : ''}
+              ${equipment.pricing.weekly ? `
+                <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                  <span>Weekly Rate</span>
+                  <strong>${ui.formatCurrency(equipment.pricing.weekly)}</strong>
+                </div>
+              ` : ''}
+              ${equipment.pricing.monthly ? `
+                <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                  <span>Monthly Rate</span>
+                  <strong>${ui.formatCurrency(equipment.pricing.monthly)}</strong>
+                </div>
+              ` : ''}
+              
+              <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                <span>Security Deposit</span>
+                <strong>${ui.formatCurrency(equipment.deposit)}</strong>
+              </div>
+
+              ${equipment.operatorIncluded ? `
+                <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                  <span>👤 Operator Available</span>
+                  <strong>${equipment.operatorCharge ? ui.formatCurrency(equipment.operatorCharge) + '/day' : 'Included'}</strong>
+                </div>
+              ` : ''}
+
+              <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(74, 124, 89, 0.1); border-radius: var(--radius-sm);">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.5rem;">${equipment.availability.status === 'Available' ? '✓' : '⚠'}</span>
+                    <strong>${equipment.availability.status}</strong>
+                  </div>
+                  ${equipment.totalBookings > 0 ? `<span style="font-size: 0.9rem; color: var(--soil-dark);">${equipment.totalBookings} bookings</span>` : ''}
+                </div>
+              </div>
+
+              ${equipment.availability.status === 'Available' && auth.isLoggedIn() ? `
+                <form id="bookingForm" style="margin-top: 2rem;">
+                  <div class="form-group">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" id="startDate" class="form-input" required min="${new Date().toISOString().split('T')[0]}">
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">End Date</label>
+                    <input type="date" id="endDate" class="form-input" required>
+                  </div>
+
+                  ${equipment.operatorIncluded ? `
+                    <div class="form-group">
+                      <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="operatorRequired">
+                        <span>Include operator (${equipment.operatorCharge ? '+' + ui.formatCurrency(equipment.operatorCharge) + '/day' : 'Free'})</span>
+                      </label>
+                    </div>
+                  ` : ''}
+
+                  <div class="form-group">
+                    <label class="form-label">Delivery Type</label>
+                    <select id="deliveryType" class="form-select">
+                      <option value="Pickup">Self Pickup</option>
+                      <option value="Delivery">Delivery to Address</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label">Notes (Optional)</label>
+                    <textarea id="notes" class="form-textarea" placeholder="Any special requirements..."></textarea>
+                  </div>
+
+                  <div id="costSummary" style="background: rgba(212, 165, 116, 0.1); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;"></div>
+
+                  <button type="submit" class="btn btn-primary" style="width: 100%;">Book Now</button>
+                </form>
+              ` : equipment.availability.status === 'Available' ? `
+                <div style="margin-top: 2rem; text-align: center;">
+                  <p style="margin-bottom: 1rem; color: var(--soil-dark);">Please login to book this equipment</p>
+                  <a href="/login" class="btn btn-primary" style="width: 100%;">Login to Book</a>
+                </div>
+              ` : `
+                <div style="margin-top: 2rem; text-align: center;">
+                  <p style="color: var(--warning);">This equipment is currently not available</p>
+                </div>
+              `}
+            </div>
+
+            ${equipment.reviews && equipment.reviews.length > 0 ? `
+              <div class="card" style="margin-top: 2rem;">
+                <h3 style="margin-bottom: 1.5rem;">Reviews (${equipment.reviews.length})</h3>
+                <div style="margin-bottom: 2rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(232, 146, 92, 0.1) 0%, rgba(212, 165, 116, 0.1) 100%); border-radius: var(--radius-md); text-align: center;">
+                  <div style="font-size: 3rem; font-weight: 700; color: var(--harvest-orange); margin-bottom: 0.5rem;">
+                    ${equipment.averageRating.toFixed(1)}
+                  </div>
+                  <div style="font-size: 1.5rem; color: var(--harvest-orange); margin-bottom: 0.5rem;">
+                    ${ui.generateStars(equipment.averageRating)}
+                  </div>
+                  <div style="color: var(--soil-dark);">Based on ${equipment.reviews.length} reviews</div>
+                </div>
+
+                ${equipment.reviews.slice(0, 5).map(review => `
+                  <div style="padding: 1rem 0; border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                      <strong>${review.user?.name || 'Anonymous'}</strong>
+                      <span style="color: var(--harvest-orange);">${ui.generateStars(review.rating)}</span>
+                    </div>
+                    <p style="color: var(--soil-dark); font-size: 0.95rem;">${review.comment}</p>
+                    <span style="font-size: 0.85rem; color: var(--soil-dark); opacity: 0.7;">
+                      ${ui.formatDate(review.date)}
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+
+      if (equipment.availability.status === 'Available' && auth.isLoggedIn()) {
+        setupBookingForm(equipment);
+      }
+    }
+
+    function setupBookingForm(equipment) {
+      const form = document.getElementById('bookingForm');
+      const startDateInput = document.getElementById('startDate');
+      const endDateInput = document.getElementById('endDate');
+      const operatorCheckbox = document.getElementById('operatorRequired');
+
+      function updateCostSummary() {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+        
+        if (startDate && endDate) {
+          const operatorRequired = operatorCheckbox ? operatorCheckbox.checked : false;
+          const cost = calculateBookingCost(
+            startDate,
+            endDate,
+            equipment.pricing.daily,
+            operatorRequired ? equipment.operatorCharge : 0,
+            equipment.deposit
+          );
+
+          document.getElementById('costSummary').innerHTML = `
+            <div style="margin-bottom: 0.5rem;"><strong>Cost Summary</strong></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span>Duration:</span>
+              <strong>${cost.duration} ${cost.duration === 1 ? 'day' : 'days'}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span>Equipment Rental:</span>
+              <span>${ui.formatCurrency(cost.baseRate)}</span>
+            </div>
+            ${cost.operatorCharge > 0 ? `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                <span>Operator Charge:</span>
+                <span>${ui.formatCurrency(cost.operatorCharge)}</span>
+              </div>
+            ` : ''}
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span>Security Deposit:</span>
+              <span>${ui.formatCurrency(cost.deposit)}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 2px solid var(--primary); margin-top: 0.5rem;">
+              <strong>Total Amount:</strong>
+              <strong style="font-size: 1.25rem; color: var(--primary);">${ui.formatCurrency(cost.totalAmount)}</strong>
+            </div>
+          `;
+        }
+      }
+
+      startDateInput.addEventListener('change', () => {
+        endDateInput.min = startDateInput.value;
+        updateCostSummary();
+      });
+      
+      endDateInput.addEventListener('change', updateCostSummary);
+      if (operatorCheckbox) {
+        operatorCheckbox.addEventListener('change', updateCostSummary);
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const bookingData = {
+          equipmentId: equipment._id,
+          startDate: startDateInput.value,
+          endDate: endDateInput.value,
+          operatorRequired: operatorCheckbox ? operatorCheckbox.checked : false,
+          deliveryType: document.getElementById('deliveryType').value,
+          notes: document.getElementById('notes').value
+        };
+
+        try {
+          const result = await api.createBooking(bookingData);
+          
+          if (result.success) {
+            ui.showAlert('Booking created successfully! Waiting for owner confirmation.', 'success');
+            setTimeout(() => {
+              window.location.href = '/bookings';
+            }, 2000);
+          } else {
+            ui.showAlert(result.message || 'Booking failed', 'error');
+          }
+        } catch (error) {
+          ui.showAlert('Error creating booking', 'error');
+        }
+      });
+    }
+
+    loadEquipmentDetail();
+  </script>
+</body>
+</html>

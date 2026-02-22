@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - AgriRent</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <span class="logo-icon">🚜</span>
+        <span>AgriRent</span>
+      </a>
+      <ul class="nav-menu">
+        <li><a href="/" class="nav-link">Home</a></li>
+        <li><a href="/login" class="btn btn-primary">Login</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container" style="max-width: 600px; margin-top: 3rem; margin-bottom: 3rem;">
+    <div class="card">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">🌱</div>
+        <h2>Create Account</h2>
+        <p style="color: var(--soil-dark);">Join AgriRent and start renting equipment</p>
+      </div>
+
+      <div id="alert-container"></div>
+
+      <form id="registerForm">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="name" class="form-input" placeholder="Enter your full name" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="email" class="form-input" placeholder="Enter your email" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Phone Number</label>
+          <input type="tel" id="phone" class="form-input" placeholder="10-digit mobile number" pattern="[0-9]{10}" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="password" class="form-input" placeholder="Minimum 6 characters" minlength="6" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input type="password" id="confirmPassword" class="form-input" placeholder="Re-enter password" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Register As</label>
+          <select id="role" class="form-select" required>
+            <option value="">Select your role</option>
+            <option value="farmer">Farmer (Rent Equipment)</option>
+            <option value="owner">Equipment Owner (List Equipment)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Village/Town</label>
+          <input type="text" id="village" class="form-input" placeholder="Enter village or town">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">District</label>
+          <input type="text" id="district" class="form-input" placeholder="Enter district">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">State</label>
+          <input type="text" id="state" class="form-input" placeholder="Enter state">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Pincode</label>
+          <input type="text" id="pincode" class="form-input" placeholder="6-digit pincode" pattern="[0-9]{6}">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+      </form>
+
+      <div style="text-align: center; margin-top: 1.5rem;">
+        <p style="color: var(--soil-dark);">
+          Already have an account? 
+          <a href="/login" style="color: var(--primary); font-weight: 600; text-decoration: none;">Login here</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const alertContainer = document.getElementById('alert-container');
+      alertContainer.innerHTML = '';
+      
+      if (password !== confirmPassword) {
+        alertContainer.innerHTML = `
+          <div class="alert alert-error">
+            <span>⚠</span>
+            <span>Passwords do not match</span>
+          </div>
+        `;
+        return;
+      }
+      
+      const formData = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        password: password,
+        role: document.getElementById('role').value,
+        address: {
+          village: document.getElementById('village').value,
+          district: document.getElementById('district').value,
+          state: document.getElementById('state').value,
+          pincode: document.getElementById('pincode').value
+        }
+      };
+      
+      try {
+        const result = await api.register(formData);
+        
+        if (result.success) {
+          auth.setToken(result.token);
+          auth.setUser(result.user);
+          
+          alertContainer.innerHTML = `
+            <div class="alert alert-success">
+              <span>✓</span>
+              <span>Registration successful! Redirecting...</span>
+            </div>
+          `;
+          
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 1000);
+        } else {
+          alertContainer.innerHTML = `
+            <div class="alert alert-error">
+              <span>⚠</span>
+              <span>${result.message || 'Registration failed'}</span>
+            </div>
+          `;
+        }
+      } catch (error) {
+        alertContainer.innerHTML = `
+          <div class="alert alert-error">
+            <span>⚠</span>
+            <span>An error occurred. Please try again.</span>
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Equipment - AgriRent</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <span class="logo-icon">🚜</span>
+        <span>AgriRent</span>
+      </a>
+      <ul class="nav-menu"></ul>
+    </div>
+  </nav>
+
+  <div class="container mt-2 mb-3">
+    <a href="/dashboard" style="color: var(--primary); text-decoration: none; display: inline-block; margin-bottom: 1rem;">
+      ← Back to Dashboard
+    </a>
+
+    <h1 class="mb-2">List Your Equipment</h1>
+
+    <div class="card">
+      <div id="alert-container"></div>
+
+      <form id="addEquipmentForm">
+        <!-- Basic Information -->
+        <h3 style="margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--primary);">
+          Basic Information
+        </h3>
+
+        <div class="form-group">
+          <label class="form-label">Equipment Name *</label>
+          <input type="text" id="name" class="form-input" placeholder="e.g., John Deere 5075E Tractor" required>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select id="category" class="form-select" required>
+              <option value="">Select category</option>
+              <option value="Land Preparation">Land Preparation</option>
+              <option value="Planting Equipment">Planting Equipment</option>
+              <option value="Irrigation">Irrigation</option>
+              <option value="Crop Protection">Crop Protection</option>
+              <option value="Harvesting">Harvesting</option>
+              <option value="Post-Harvest">Post-Harvest</option>
+              <option value="Transportation">Transportation</option>
+              <option value="Specialized">Specialized</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Equipment Type *</label>
+            <input type="text" id="type" class="form-input" placeholder="e.g., Tractor, Harvester, etc." required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Description *</label>
+          <textarea id="description" class="form-textarea" placeholder="Describe your equipment, its uses, and any special features..." required></textarea>
+        </div>
+
+        <!-- Specifications -->
+        <h3 style="margin: 2rem 0 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--primary);">
+          Specifications
+        </h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Brand</label>
+            <input type="text" id="brand" class="form-input" placeholder="e.g., John Deere, Mahindra">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Model</label>
+            <input type="text" id="model" class="form-input" placeholder="e.g., 5075E">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Year</label>
+            <input type="number" id="year" class="form-input" placeholder="e.g., 2020" min="1950" max="2025">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Horsepower</label>
+            <input type="text" id="horsepower" class="form-input" placeholder="e.g., 75 HP">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Capacity</label>
+            <input type="text" id="capacity" class="form-input" placeholder="e.g., 2 tons, 500L">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Condition *</label>
+            <select id="condition" class="form-select" required>
+              <option value="Excellent">Excellent</option>
+              <option value="Good">Good</option>
+              <option value="Fair">Fair</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Pricing -->
+        <h3 style="margin: 2rem 0 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--primary);">
+          Pricing
+        </h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Hourly Rate (₹)</label>
+            <input type="number" id="hourly" class="form-input" placeholder="0" min="0">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Daily Rate (₹) *</label>
+            <input type="number" id="daily" class="form-input" placeholder="0" min="0" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Weekly Rate (₹)</label>
+            <input type="number" id="weekly" class="form-input" placeholder="0" min="0">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Monthly Rate (₹)</label>
+            <input type="number" id="monthly" class="form-input" placeholder="0" min="0">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Security Deposit (₹) *</label>
+            <input type="number" id="deposit" class="form-input" placeholder="0" min="0" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Minimum Rental Period</label>
+            <input type="text" id="minRentalPeriod" class="form-input" placeholder="e.g., 1 day, 4 hours" value="1 day">
+          </div>
+        </div>
+
+        <!-- Operator -->
+        <h3 style="margin: 2rem 0 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--primary);">
+          Operator
+        </h3>
+
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="operatorIncluded">
+            <span>Operator available with equipment</span>
+          </label>
+        </div>
+
+        <div class="form-group" id="operatorChargeGroup" style="display: none;">
+          <label class="form-label">Operator Charge per Day (₹)</label>
+          <input type="number" id="operatorCharge" class="form-input" placeholder="0" min="0">
+          <small style="color: var(--soil-dark);">Leave 0 if operator is included in the rental price</small>
+        </div>
+
+        <!-- Location -->
+        <h3 style="margin: 2rem 0 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--primary);">
+          Location
+        </h3>
+
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <input type="text" id="address" class="form-input" placeholder="Street address or landmark">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label">Village/Town *</label>
+            <input type="text" id="village" class="form-input" placeholder="Enter village or town" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">District *</label>
+            <input type="text" id="district" class="form-input" placeholder="Enter district" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">State *</label>
+            <input type="text" id="state" class="form-input" placeholder="Enter state" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Pincode</label>
+            <input type="text" id="pincode" class="form-input" placeholder="6-digit pincode" pattern="[0-9]{6}">
+          </div>
+        </div>
+
+        <!-- Features -->
+        <h3 style="margin: 2rem 0 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--primary);">
+          Additional Features
+        </h3>
+
+        <div class="form-group">
+          <label class="form-label">Features (one per line)</label>
+          <textarea id="features" class="form-textarea" placeholder="List key features, e.g.:&#10;Air conditioned cabin&#10;GPS enabled&#10;Low fuel consumption&#10;Regular maintenance"></textarea>
+          <small style="color: var(--soil-dark);">Enter each feature on a new line</small>
+        </div>
+
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(74, 124, 89, 0.2);">
+          <button type="submit" class="btn btn-primary" style="width: 100%;">List Equipment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    // Show/hide operator charge field
+    document.getElementById('operatorIncluded').addEventListener('change', (e) => {
+      document.getElementById('operatorChargeGroup').style.display = 
+        e.target.checked ? 'block' : 'none';
+    });
+
+    document.getElementById('addEquipmentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const alertContainer = document.getElementById('alert-container');
+      alertContainer.innerHTML = '';
+
+      // Parse features
+      const featuresText = document.getElementById('features').value;
+      const features = featuresText
+        .split('\n')
+        .map(f => f.trim())
+        .filter(f => f.length > 0);
+
+      // Build equipment data
+      const equipmentData = {
+        name: document.getElementById('name').value,
+        category: document.getElementById('category').value,
+        type: document.getElementById('type').value,
+        description: document.getElementById('description').value,
+        specifications: {
+          brand: document.getElementById('brand').value,
+          model: document.getElementById('model').value,
+          year: document.getElementById('year').value ? Number(document.getElementById('year').value) : undefined,
+          horsepower: document.getElementById('horsepower').value,
+          capacity: document.getElementById('capacity').value,
+          condition: document.getElementById('condition').value
+        },
+        pricing: {
+          hourly: document.getElementById('hourly').value ? Number(document.getElementById('hourly').value) : undefined,
+          daily: Number(document.getElementById('daily').value),
+          weekly: document.getElementById('weekly').value ? Number(document.getElementById('weekly').value) : undefined,
+          monthly: document.getElementById('monthly').value ? Number(document.getElementById('monthly').value) : undefined
+        },
+        deposit: Number(document.getElementById('deposit').value),
+        minRentalPeriod: document.getElementById('minRentalPeriod').value,
+        operatorIncluded: document.getElementById('operatorIncluded').checked,
+        operatorCharge: document.getElementById('operatorIncluded').checked && document.getElementById('operatorCharge').value 
+          ? Number(document.getElementById('operatorCharge').value) 
+          : 0,
+        location: {
+          address: document.getElementById('address').value,
+          village: document.getElementById('village').value,
+          district: document.getElementById('district').value,
+          state: document.getElementById('state').value,
+          pincode: document.getElementById('pincode').value
+        },
+        features: features
+      };
+
+      try {
+        const result = await api.createEquipment(equipmentData);
+
+        if (result.success) {
+          alertContainer.innerHTML = `
+            <div class="alert alert-success">
+              <span>✓</span>
+              <span>Equipment listed successfully! Redirecting...</span>
+            </div>
+          `;
+
+          setTimeout(() => {
+            window.location.href = '/dashboard';
+          }, 2000);
+        } else {
+          alertContainer.innerHTML = `
+            <div class="alert alert-error">
+              <span>⚠</span>
+              <span>${result.message || 'Failed to list equipment'}</span>
+            </div>
+          `;
+        }
+      } catch (error) {
+        alertContainer.innerHTML = `
+          <div class="alert alert-error">
+            <span>⚠</span>
+            <span>Error listing equipment. Please try again.</span>
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

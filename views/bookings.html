@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Bookings - AgriRent</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <span class="logo-icon">🚜</span>
+        <span>AgriRent</span>
+      </a>
+      <ul class="nav-menu"></ul>
+    </div>
+  </nav>
+
+  <div class="container mt-2 mb-3">
+    <h1 class="mb-2">My Bookings</h1>
+
+    <!-- Filter Tabs -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+      <button class="btn btn-primary filter-tab active" data-filter="all">All</button>
+      <button class="btn btn-outline filter-tab" data-filter="Pending">Pending</button>
+      <button class="btn btn-outline filter-tab" data-filter="Confirmed">Confirmed</button>
+      <button class="btn btn-outline filter-tab" data-filter="Active">Active</button>
+      <button class="btn btn-outline filter-tab" data-filter="Completed">Completed</button>
+      <button class="btn btn-outline filter-tab" data-filter="Cancelled">Cancelled</button>
+    </div>
+
+    <div id="bookingsContainer">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Booking Detail Modal -->
+  <div id="bookingModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; overflow-y: auto;">
+    <div style="max-width: 800px; margin: 2rem auto; background: white; border-radius: var(--radius-lg); padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem;">
+        <h2>Booking Details</h2>
+        <button onclick="closeModal()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: var(--soil-dark);">&times;</button>
+      </div>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    let allBookings = [];
+    let currentFilter = 'all';
+
+    async function loadBookings() {
+      try {
+        const result = await api.getBookings();
+        
+        if (result.success) {
+          allBookings = result.data;
+          displayBookings(allBookings);
+        } else {
+          document.getElementById('bookingsContainer').innerHTML = `
+            <div class="alert alert-error">
+              <span>⚠</span>
+              <span>Failed to load bookings</span>
+            </div>
+          `;
+        }
+      } catch (error) {
+        document.getElementById('bookingsContainer').innerHTML = `
+          <div class="alert alert-error">
+            <span>⚠</span>
+            <span>Error loading bookings</span>
+          </div>
+        `;
+      }
+    }
+
+    function displayBookings(bookings) {
+      const container = document.getElementById('bookingsContainer');
+      const user = auth.getUser();
+
+      if (bookings.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 3rem;">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">📋</div>
+            <h3>No bookings found</h3>
+            <p style="color: var(--soil-dark); margin-bottom: 1.5rem;">
+              ${currentFilter === 'all' ? 'You haven\'t made any bookings yet' : `No ${currentFilter.toLowerCase()} bookings`}
+            </p>
+            ${currentFilter === 'all' && user.role === 'farmer' ? '<a href="/equipment" class="btn btn-primary">Browse Equipment</a>' : ''}
+          </div>
+        `;
+        return;
+      }
+
+      const equipmentIcons = {
+        'Land Preparation': '🚜',
+        'Planting Equipment': '🌱',
+        'Irrigation': '💧',
+        'Crop Protection': '🛡️',
+        'Harvesting': '🌾',
+        'Post-Harvest': '📦',
+        'Transportation': '🚛',
+        'Specialized': '🤖'
+      };
+
+      container.innerHTML = `
+        <div style="display: grid; gap: 1.5rem;">
+          ${bookings.map(booking => {
+            const isOwner = user.role === 'owner';
+            const otherParty = isOwner ? booking.renter : booking.owner;
+            
+            return `
+              <div class="card" style="cursor: pointer;" onclick="showBookingDetail('${booking._id}')">
+                <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 1.5rem; align-items: start;">
+                  <!-- Equipment Icon -->
+                  <div style="font-size: 4rem; background: linear-gradient(135deg, var(--wheat-gold) 0%, var(--harvest-orange) 100%); width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md);">
+                    ${equipmentIcons[booking.equipment?.category] || '🚜'}
+                  </div>
+
+                  <!-- Booking Info -->
+                  <div>
+                    <div style="margin-bottom: 0.5rem;">
+                      <h3 style="margin-bottom: 0.25rem;">${booking.equipment?.name || 'Equipment'}</h3>
+                      <span class="equipment-category" style="font-size: 0.75rem;">${booking.equipment?.category || ''}</span>
+                    </div>
+
+                    <div style="display: grid; gap: 0.5rem; margin-top: 1rem; color: var(--soil-dark);">
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span>📅</span>
+                        <span>${ui.formatDate(booking.startDate)} - ${ui.formatDate(booking.endDate)} (${booking.duration} days)</span>
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span>${isOwner ? '👤' : '🏪'}</span>
+                        <span>${isOwner ? 'Renter' : 'Owner'}: ${otherParty?.name || 'N/A'} | ${otherParty?.phone || ''}</span>
+                      </div>
+                      ${booking.deliveryType ? `
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                          <span>🚚</span>
+                          <span>${booking.deliveryType}</span>
+                        </div>
+                      ` : ''}
+                      ${booking.operatorRequired ? `
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                          <span>👤</span>
+                          <span>Operator Required</span>
+                        </div>
+                      ` : ''}
+                    </div>
+                  </div>
+
+                  <!-- Price and Status -->
+                  <div style="text-align: right;">
+                    <div style="font-size: 1.75rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">
+                      ${ui.formatCurrency(booking.pricing.totalAmount)}
+                    </div>
+                    <span style="padding: 0.5rem 1rem; background: ${
+                      booking.status === 'Completed' ? 'rgba(107, 158, 120, 0.15)' :
+                      booking.status === 'Confirmed' || booking.status === 'Active' ? 'rgba(135, 206, 235, 0.15)' :
+                      booking.status === 'Pending' ? 'rgba(232, 146, 92, 0.15)' :
+                      'rgba(184, 96, 78, 0.15)'
+                    }; color: ${
+                      booking.status === 'Completed' ? 'var(--success)' :
+                      booking.status === 'Confirmed' || booking.status === 'Active' ? 'var(--sky-blue)' :
+                      booking.status === 'Pending' ? 'var(--warning)' :
+                      'var(--danger)'
+                    }; border-radius: var(--radius-sm); font-weight: 600; white-space: nowrap; display: inline-block;">
+                      ${booking.status}
+                    </span>
+                    <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--soil-dark);">
+                      Booked ${ui.formatDate(booking.createdAt)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    async function showBookingDetail(bookingId) {
+      try {
+        const result = await api.getBookingById(bookingId);
+        
+        if (result.success) {
+          const booking = result.data;
+          const user = auth.getUser();
+          const isOwner = user.role === 'owner';
+          const canConfirm = isOwner && booking.status === 'Pending';
+          const canComplete = isOwner && (booking.status === 'Confirmed' || booking.status === 'Active');
+          const canCancel = booking.status === 'Pending' || booking.status === 'Confirmed';
+
+          document.getElementById('modalContent').innerHTML = `
+            <div style="display: grid; gap: 1.5rem;">
+              <!-- Equipment Details -->
+              <div>
+                <h4 style="margin-bottom: 1rem;">Equipment</h4>
+                <p><strong>${booking.equipment.name}</strong></p>
+                <p style="color: var(--soil-dark);">${booking.equipment.description}</p>
+              </div>
+
+              <!-- Booking Details -->
+              <div>
+                <h4 style="margin-bottom: 1rem;">Booking Details</h4>
+                <div style="display: grid; gap: 0.75rem;">
+                  <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+                    <strong>Booking ID:</strong>
+                    <span>${booking._id}</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+                    <strong>Status:</strong>
+                    <span style="padding: 0.25rem 0.75rem; background: ${
+                      booking.status === 'Completed' ? 'rgba(107, 158, 120, 0.15)' :
+                      booking.status === 'Confirmed' || booking.status === 'Active' ? 'rgba(135, 206, 235, 0.15)' :
+                      booking.status === 'Pending' ? 'rgba(232, 146, 92, 0.15)' :
+                      'rgba(184, 96, 78, 0.15)'
+                    }; color: ${
+                      booking.status === 'Completed' ? 'var(--success)' :
+                      booking.status === 'Confirmed' || booking.status === 'Active' ? 'var(--sky-blue)' :
+                      booking.status === 'Pending' ? 'var(--warning)' :
+                      'var(--danger)'
+                    }; border-radius: var(--radius-sm); font-weight: 600; display: inline-block;">
+                      ${booking.status}
+                    </span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+                    <strong>Start Date:</strong>
+                    <span>${ui.formatDate(booking.startDate)}</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+                    <strong>End Date:</strong>
+                    <span>${ui.formatDate(booking.endDate)}</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+                    <strong>Duration:</strong>
+                    <span>${booking.duration} days</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+                    <strong>Delivery Type:</strong>
+                    <span>${booking.deliveryType}</span>
+                  </div>
+                  ${booking.operatorRequired ? `
+                    <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+                      <strong>Operator:</strong>
+                      <span>Required</span>
+                    </div>
+                  ` : ''}
+                  ${booking.notes ? `
+                    <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+                      <strong>Notes:</strong>
+                      <span>${booking.notes}</span>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+
+              <!-- Pricing Breakdown -->
+              <div>
+                <h4 style="margin-bottom: 1rem;">Pricing Breakdown</h4>
+                <div style="background: rgba(74, 124, 89, 0.05); padding: 1rem; border-radius: var(--radius-md);">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Equipment Rental (${booking.duration} days):</span>
+                    <span>${ui.formatCurrency(booking.pricing.baseRate)}</span>
+                  </div>
+                  ${booking.pricing.operatorCharge > 0 ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                      <span>Operator Charge:</span>
+                      <span>${ui.formatCurrency(booking.pricing.operatorCharge)}</span>
+                    </div>
+                  ` : ''}
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <span>Security Deposit:</span>
+                    <span>${ui.formatCurrency(booking.pricing.deposit)}</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; padding-top: 0.75rem; border-top: 2px solid var(--primary); margin-top: 0.75rem; font-size: 1.25rem; font-weight: 700;">
+                    <span>Total Amount:</span>
+                    <span style="color: var(--primary);">${ui.formatCurrency(booking.pricing.totalAmount)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contact Information -->
+              <div>
+                <h4 style="margin-bottom: 1rem;">${isOwner ? 'Renter' : 'Owner'} Information</h4>
+                <div style="display: grid; gap: 0.5rem;">
+                  <p><strong>Name:</strong> ${isOwner ? booking.renter.name : booking.owner.name}</p>
+                  <p><strong>Phone:</strong> ${isOwner ? booking.renter.phone : booking.owner.phone}</p>
+                  <p><strong>Email:</strong> ${isOwner ? booking.renter.email : booking.owner.email}</p>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div style="display: flex; gap: 1rem; flex-wrap: wrap; padding-top: 1rem; border-top: 1px solid rgba(74, 124, 89, 0.2);">
+                ${canConfirm ? `
+                  <button onclick="confirmBooking('${booking._id}')" class="btn btn-primary">Confirm Booking</button>
+                ` : ''}
+                ${canComplete ? `
+                  <button onclick="completeBooking('${booking._id}')" class="btn btn-secondary">Mark as Completed</button>
+                ` : ''}
+                ${canCancel ? `
+                  <button onclick="cancelBooking('${booking._id}')" class="btn btn-outline" style="border-color: var(--danger); color: var(--danger);">Cancel Booking</button>
+                ` : ''}
+                <button onclick="closeModal()" class="btn btn-outline">Close</button>
+              </div>
+            </div>
+          `;
+
+          document.getElementById('bookingModal').style.display = 'block';
+        }
+      } catch (error) {
+        ui.showAlert('Error loading booking details', 'error');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('bookingModal').style.display = 'none';
+    }
+
+    async function confirmBooking(bookingId) {
+      if (confirm('Are you sure you want to confirm this booking?')) {
+        try {
+          const result = await api.confirmBooking(bookingId);
+          if (result.success) {
+            ui.showAlert('Booking confirmed successfully', 'success');
+            closeModal();
+            loadBookings();
+          } else {
+            ui.showAlert(result.message || 'Failed to confirm booking', 'error');
+          }
+        } catch (error) {
+          ui.showAlert('Error confirming booking', 'error');
+        }
+      }
+    }
+
+    async function completeBooking(bookingId) {
+      if (confirm('Mark this booking as completed? The equipment will be available for rent again.')) {
+        try {
+          const result = await api.completeBooking(bookingId);
+          if (result.success) {
+            ui.showAlert('Booking completed successfully', 'success');
+            closeModal();
+            loadBookings();
+          } else {
+            ui.showAlert(result.message || 'Failed to complete booking', 'error');
+          }
+        } catch (error) {
+          ui.showAlert('Error completing booking', 'error');
+        }
+      }
+    }
+
+    async function cancelBooking(bookingId) {
+      const reason = prompt('Please provide a reason for cancellation:');
+      if (reason) {
+        try {
+          const result = await api.cancelBooking(bookingId, reason);
+          if (result.success) {
+            ui.showAlert('Booking cancelled successfully', 'success');
+            closeModal();
+            loadBookings();
+          } else {
+            ui.showAlert(result.message || 'Failed to cancel booking', 'error');
+          }
+        } catch (error) {
+          ui.showAlert('Error cancelling booking', 'error');
+        }
+      }
+    }
+
+    // Filter tabs
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.filter-tab').forEach(t => {
+          t.classList.remove('active', 'btn-primary');
+          t.classList.add('btn-outline');
+        });
+        e.target.classList.add('active', 'btn-primary');
+        e.target.classList.remove('btn-outline');
+
+        currentFilter = e.target.dataset.filter;
+        const filtered = currentFilter === 'all' 
+          ? allBookings 
+          : allBookings.filter(b => b.status === currentFilter);
+        displayBookings(filtered);
+      });
+    });
+
+    // Close modal on outside click
+    document.getElementById('bookingModal').addEventListener('click', (e) => {
+      if (e.target.id === 'bookingModal') {
+        closeModal();
+      }
+    });
+
+    loadBookings();
+  </script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - AgriRent</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <span class="logo-icon">🚜</span>
+        <span>AgriRent</span>
+      </a>
+      <ul class="nav-menu"></ul>
+    </div>
+  </nav>
+
+  <div class="container mt-2 mb-3">
+    <h1 class="mb-2">Dashboard</h1>
+    
+    <div id="dashboardContent">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script>
+    async function loadDashboard() {
+      const user = auth.getUser();
+      const container = document.getElementById('dashboardContent');
+
+      if (!user) {
+        window.location.href = '/login';
+        return;
+      }
+
+      try {
+        // Fetch user profile and bookings
+        const [profileResult, bookingsResult] = await Promise.all([
+          api.getProfile(),
+          api.getBookings()
+        ]);
+
+        let equipmentResult;
+        if (user.role === 'owner') {
+          equipmentResult = await api.getMyListings();
+        }
+
+        displayDashboard(profileResult.user, bookingsResult.data, equipmentResult?.data);
+      } catch (error) {
+        container.innerHTML = `
+          <div class="alert alert-error">
+            <span>⚠</span>
+            <span>Error loading dashboard</span>
+          </div>
+        `;
+      }
+    }
+
+    function displayDashboard(user, bookings, equipment) {
+      const container = document.getElementById('dashboardContent');
+      
+      const upcomingBookings = bookings.filter(b => 
+        b.status === 'Confirmed' || b.status === 'Pending'
+      );
+      const activeBookings = bookings.filter(b => b.status === 'Active');
+      const completedBookings = bookings.filter(b => b.status === 'Completed');
+
+      container.innerHTML = `
+        <!-- Welcome Card -->
+        <div class="card mb-2" style="background: linear-gradient(135deg, var(--primary) 0%, var(--leaf-green) 100%); color: white;">
+          <h2 style="color: white; margin-bottom: 0.5rem;">Welcome back, ${user.name}! 👋</h2>
+          <p style="opacity: 0.9;">Role: ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
+        </div>
+
+        <!-- Stats Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+          <div class="card" style="text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📊</div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">
+              ${bookings.length}
+            </div>
+            <div style="color: var(--soil-dark);">Total Bookings</div>
+          </div>
+
+          <div class="card" style="text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⏳</div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--warning); margin-bottom: 0.25rem;">
+              ${upcomingBookings.length}
+            </div>
+            <div style="color: var(--soil-dark);">Upcoming</div>
+          </div>
+
+          <div class="card" style="text-align: center;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--success); margin-bottom: 0.25rem;">
+              ${completedBookings.length}
+            </div>
+            <div style="color: var(--soil-dark);">Completed</div>
+          </div>
+
+          ${user.role === 'owner' && equipment ? `
+            <div class="card" style="text-align: center;">
+              <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🚜</div>
+              <div style="font-size: 2rem; font-weight: 700; color: var(--secondary); margin-bottom: 0.25rem;">
+                ${equipment.length}
+              </div>
+              <div style="color: var(--soil-dark);">My Equipment</div>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Profile Card -->
+        <div class="card mb-2">
+          <h3 style="margin-bottom: 1.5rem;">Profile Information</h3>
+          <div style="display: grid; gap: 1rem;">
+            <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+              <strong>Name:</strong>
+              <span>${user.name}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+              <strong>Email:</strong>
+              <span>${user.email}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+              <strong>Phone:</strong>
+              <span>${user.phone}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+              <strong>Location:</strong>
+              <span>${[user.address?.village, user.address?.district, user.address?.state].filter(Boolean).join(', ') || 'Not specified'}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 150px 1fr; gap: 1rem;">
+              <strong>Member Since:</strong>
+              <span>${ui.formatDate(user.createdAt)}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mb-2">
+          <h3 style="margin-bottom: 1.5rem;">Quick Actions</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="/equipment" class="btn btn-primary">Browse Equipment</a>
+            <a href="/bookings" class="btn btn-secondary">View My Bookings</a>
+            ${user.role === 'owner' ? '<a href="/add-equipment" class="btn btn-outline">Add New Equipment</a>' : ''}
+          </div>
+        </div>
+
+        ${user.role === 'owner' && equipment && equipment.length > 0 ? `
+          <div class="card mb-2">
+            <h3 style="margin-bottom: 1.5rem;">My Equipment (${equipment.length})</h3>
+            <div class="equipment-grid">
+              ${equipment.slice(0, 6).map(item => {
+                const equipmentIcons = {
+                  'Land Preparation': '🚜',
+                  'Planting Equipment': '🌱',
+                  'Irrigation': '💧',
+                  'Crop Protection': '🛡️',
+                  'Harvesting': '🌾',
+                  'Post-Harvest': '📦',
+                  'Transportation': '🚛',
+                  'Specialized': '🤖'
+                };
+                return `
+                  <div class="equipment-card">
+                    <div class="equipment-image">
+                      ${equipmentIcons[item.category] || '🚜'}
+                    </div>
+                    <div class="equipment-content">
+                      <span class="equipment-category">${item.category}</span>
+                      <h4 class="equipment-title">${item.name}</h4>
+                      <div class="equipment-price">
+                        ${ui.formatCurrency(item.pricing.daily)} <span>/day</span>
+                      </div>
+                      <div style="margin-bottom: 1rem;">
+                        <span style="padding: 0.25rem 0.75rem; background: ${item.availability.status === 'Available' ? 'rgba(107, 158, 120, 0.15)' : 'rgba(232, 146, 92, 0.15)'}; color: ${item.availability.status === 'Available' ? 'var(--success)' : 'var(--warning)'}; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;">
+                          ${item.availability.status}
+                        </span>
+                      </div>
+                      <a href="/equipment/${item._id}" class="btn btn-outline" style="width: 100%; font-size: 0.9rem;">View Details</a>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+            ${equipment.length > 6 ? `
+              <div style="text-align: center; margin-top: 1.5rem;">
+                <a href="/my-equipment" class="btn btn-primary">View All Equipment</a>
+              </div>
+            ` : ''}
+          </div>
+        ` : ''}
+
+        <!-- Recent Bookings -->
+        ${bookings.length > 0 ? `
+          <div class="card">
+            <h3 style="margin-bottom: 1.5rem;">Recent Bookings</h3>
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom: 2px solid var(--primary);">
+                    <th style="padding: 1rem; text-align: left;">Equipment</th>
+                    <th style="padding: 1rem; text-align: left;">Dates</th>
+                    <th style="padding: 1rem; text-align: left;">Amount</th>
+                    <th style="padding: 1rem; text-align: left;">Status</th>
+                    <th style="padding: 1rem; text-align: left;">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${bookings.slice(0, 5).map(booking => `
+                    <tr style="border-bottom: 1px solid rgba(74, 124, 89, 0.1);">
+                      <td style="padding: 1rem;">
+                        <strong>${booking.equipment?.name || 'N/A'}</strong>
+                        <div style="font-size: 0.85rem; color: var(--soil-dark);">
+                          ${booking.equipment?.type || ''}
+                        </div>
+                      </td>
+                      <td style="padding: 1rem;">
+                        <div style="font-size: 0.9rem;">
+                          ${ui.formatDate(booking.startDate)}<br>
+                          to ${ui.formatDate(booking.endDate)}
+                        </div>
+                      </td>
+                      <td style="padding: 1rem;">
+                        <strong>${ui.formatCurrency(booking.pricing.totalAmount)}</strong>
+                      </td>
+                      <td style="padding: 1rem;">
+                        <span style="padding: 0.375rem 0.75rem; background: ${
+                          booking.status === 'Completed' ? 'rgba(107, 158, 120, 0.15)' :
+                          booking.status === 'Confirmed' || booking.status === 'Active' ? 'rgba(135, 206, 235, 0.15)' :
+                          booking.status === 'Pending' ? 'rgba(232, 146, 92, 0.15)' :
+                          'rgba(184, 96, 78, 0.15)'
+                        }; color: ${
+                          booking.status === 'Completed' ? 'var(--success)' :
+                          booking.status === 'Confirmed' || booking.status === 'Active' ? 'var(--sky-blue)' :
+                          booking.status === 'Pending' ? 'var(--warning)' :
+                          'var(--danger)'
+                        }; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;">
+                          ${booking.status}
+                        </span>
+                      </td>
+                      <td style="padding: 1rem;">
+                        <a href="/bookings" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.5rem 1rem;">View</a>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            ${bookings.length > 5 ? `
+              <div style="text-align: center; margin-top: 1.5rem;">
+                <a href="/bookings" class="btn btn-primary">View All Bookings</a>
+              </div>
+            ` : ''}
+          </div>
+        ` : `
+          <div class="card" style="text-align: center; padding: 3rem;">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">📋</div>
+            <h3 style="margin-bottom: 0.5rem;">No Bookings Yet</h3>
+            <p style="color: var(--soil-dark); margin-bottom: 1.5rem;">
+              ${user.role === 'farmer' ? 'Start browsing equipment to make your first booking' : 'Wait for farmers to book your equipment'}
+            </p>
+            ${user.role === 'farmer' ? '<a href="/equipment" class="btn btn-primary">Browse Equipment</a>' : ''}
+          </div>
+        `}
+      `;
+    }
+
+    loadDashboard();
+  </script>
+</body>
+</html>
